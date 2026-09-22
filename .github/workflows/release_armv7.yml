@@ -35,7 +35,7 @@ jobs:
 
       - name: Make build scripts executable
         run: |
-          git update-index --chmod=+x build_armv7.sh
+          git update-index --chmod=+x build-armv7.sh
           git update-index --chmod=+x build-sftp-openssh.sh
 
       - name: Build static dropbearmulti (musl)
@@ -44,7 +44,7 @@ jobs:
           DROPBEAR_VERSION: ${{ env.DROPBEAR_VERSION }}
           ZIG_VERSION: ${{ env.ZIG_VERSION }}
           JOBS: ${{ env.JOBS }}
-        run: ./build_armv7.sh
+        run: ./build-armv7.sh
 
       - name: Show dropbear outputs
         run: ls -l dropbear-*.tar.xz*
