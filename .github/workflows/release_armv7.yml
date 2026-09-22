@@ -35,7 +35,7 @@ jobs:
 
       - name: Make build scripts executable
         run: |
-          git update-index --chmod=+x build.sh
+          git update-index --chmod=+x build_armv7.sh
           git update-index --chmod=+x build-sftp-openssh.sh
 
       - name: Build static dropbearmulti (musl)
