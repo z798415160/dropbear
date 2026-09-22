@@ -17,8 +17,6 @@ jobs:
             runs_on: ubuntu-latest
           - target: aarch64-linux-musl
             runs_on: ubuntu-24.04-arm
-          - target: armv7-unknown-linux-musleabihf"
-            runs_on: ubuntu-latest
 
     env:
       DROPBEAR_VERSION: 2026.94
@@ -72,7 +70,6 @@ jobs:
           case "$TARGET" in
             x86_64-linux-musl) plat="linux/amd64" ;;
             aarch64-linux-musl) plat="linux/arm64" ;;
-            armv7-unknown-linux-musleabihf) plat="linux/arm64" ;;
             *) echo "Unknown TARGET $TARGET"; exit 1 ;;
           esac
           mkdir -p testdir testdir-sftp
