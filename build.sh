@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -ev
 
+sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+
 # ---- Config ----------------------------------------------------------------
 : "${DROPBEAR_VERSION:=2026.94}"   # Dropbear release to build
 : "${ZIG_VERSION:=0.16.0}"         # Zig to use for musl cross static
@@ -11,7 +13,7 @@ if [[ -z "${TARGET:-}" ]]; then
   case "$(uname -m)" in
     x86_64)  TARGET="x86_64-linux-musl" ;;
     aarch64) TARGET="aarch64-linux-musl" ;;
-    armv7) TARGET="armv7-unknown-linux-musleabihf" ;;
+    armv7) TARGET="armv7-unknown-linux-musleabihf" ;CC=gcc-arm-linux-gnueabihf;CXX=g++-arm-linux-gnueabihf;;
     *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
   esac
 fi
@@ -19,7 +21,6 @@ fi
 workdir="$(pwd)"
 builddir="$(mktemp -d)"
 trap 'rm -rf "$builddir"' EXIT
-sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
 zig_pkg_arch=`uname -m`
 zig_pkg="zig-${zig_pkg_arch}-linux-${ZIG_VERSION}.tar.xz"
