@@ -75,7 +75,7 @@ jobs:
             armv7-unknown-linux-musleabihf) plat="linux/arm64" ;;
             *) echo "Unknown TARGET $TARGET"; exit 1 ;;
           esac
-          apt install -y armv7-unknown-linux-musleabihf
+          apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           mkdir -p testdir testdir-sftp
           tar -xJf "dropbear-${TARGET}.tar.xz" -C testdir
           tar -xJf "sftp-server-${TARGET}.tar.xz" -C testdir-sftp
