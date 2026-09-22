@@ -17,14 +17,16 @@ jobs:
             runs_on: ubuntu-latest
           - target: aarch64-linux-musl
             runs_on: ubuntu-24.04-arm
+          - target: armv7-unknown-linux-musleabihf"
+            runs_on: ubuntu-latest
 
     env:
-      DROPBEAR_VERSION: 2025.88
-      ZIG_VERSION: 0.15.1
+      DROPBEAR_VERSION: 2026.94
+      ZIG_VERSION: 0.17.0
       JOBS: 8
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # (Optional) prove we’re on the expected arch
       - name: Smoke arch
@@ -70,8 +72,10 @@ jobs:
           case "$TARGET" in
             x86_64-linux-musl) plat="linux/amd64" ;;
             aarch64-linux-musl) plat="linux/arm64" ;;
+            armv7-unknown-linux-musleabihf) plat="linux/arm64" ;;
             *) echo "Unknown TARGET $TARGET"; exit 1 ;;
           esac
+          apt install -y armv7-unknown-linux-musleabihf
           mkdir -p testdir testdir-sftp
           tar -xJf "dropbear-${TARGET}.tar.xz" -C testdir
           tar -xJf "sftp-server-${TARGET}.tar.xz" -C testdir-sftp
@@ -88,7 +92,7 @@ jobs:
           '
 
       - name: Upload dropbear artifact (tarballs)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dropbear-${{ matrix.target }}
           overwrite: true
@@ -97,7 +101,7 @@ jobs:
             dropbear-${{ matrix.target }}.tar.xz.SHA256
 
       - name: Upload sftp-server artifact (tarballs)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sftp-server-${{ matrix.target }}
           overwrite: true
@@ -110,10 +114,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: dist
 
