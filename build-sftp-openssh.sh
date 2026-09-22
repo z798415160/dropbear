@@ -18,6 +18,7 @@ esac
 workdir="$(pwd)"
 builddir="$(mktemp -d)"
 trap 'rm -rf "$builddir"' EXIT
+apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
 # ---- Ensure zig available (reuse if already installed) --------------------
 if ! command -v zig >/dev/null 2>&1; then
