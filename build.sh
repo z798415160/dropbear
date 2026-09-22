@@ -13,7 +13,6 @@ if [[ -z "${TARGET:-}" ]]; then
   case "$(uname -m)" in
     x86_64)  TARGET="x86_64-linux-musl" ;;
     aarch64) TARGET="aarch64-linux-musl" ;;
-    armv7) TARGET="armv7-unknown-linux-musleabihf" ;CC=gcc-arm-linux-gnueabihf;CXX=g++-arm-linux-gnueabihf;;
     *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
   esac
 fi
