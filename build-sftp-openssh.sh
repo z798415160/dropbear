@@ -4,7 +4,7 @@ set -ev
 
 # ---- Config ---------------------------------------------------------------
 : "${OPENSSH_VERSION:=9.8p1}"     # OpenSSH portable version
-: "${ZLIB_VERSION:=1.3.1}"        # zlib version to embed
+: "${ZLIB_VERSION:=1.3.2}"        # zlib version to embed
 : "${ZIG_VERSION:=0.16.0}"
 : "${JOBS:=8}"
 
