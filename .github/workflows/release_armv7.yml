@@ -1,4 +1,4 @@
-name: Build, Test & Release Dropbear Binaries
+name: armv7_Build, Test & Release Dropbear Binaries
 
 on:
   push:
