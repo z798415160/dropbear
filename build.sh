@@ -2,8 +2,8 @@
 set -ev
 
 # ---- Config ----------------------------------------------------------------
-: "${DROPBEAR_VERSION:=2025.88}"   # Dropbear release to build
-: "${ZIG_VERSION:=0.15.1}"         # Zig to use for musl cross static
+: "${DROPBEAR_VERSION:=2026.94}"   # Dropbear release to build
+: "${ZIG_VERSION:=0.17.0}"         # Zig to use for musl cross static
 : "${JOBS:=8}"                     # parallel make
 
 # TARGET may be provided by CI matrix (e.g., x86_64-linux-musl, aarch64-linux-musl
@@ -11,6 +11,7 @@ if [[ -z "${TARGET:-}" ]]; then
   case "$(uname -m)" in
     x86_64)  TARGET="x86_64-linux-musl" ;;
     aarch64) TARGET="aarch64-linux-musl" ;;
+    armv7) TARGET="armv7-unknown-linux-musleabihf" ;;
     *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
   esac
 fi
