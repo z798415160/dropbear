@@ -19,7 +19,7 @@ fi
 workdir="$(pwd)"
 builddir="$(mktemp -d)"
 trap 'rm -rf "$builddir"' EXIT
-apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
 zig_pkg_arch=`uname -m`
 zig_pkg="zig-${zig_pkg_arch}-linux-${ZIG_VERSION}.tar.xz"
