@@ -82,15 +82,6 @@ jobs:
             dropbear-${{ matrix.target }}.tar.xz
             dropbear-${{ matrix.target }}.tar.xz.SHA256
 
-      - name: Upload sftp-server artifact (tarballs)
-        uses: actions/upload-artifact@v5
-        with:
-          name: sftp-server-${{ matrix.target }}
-          overwrite: true
-          path: |
-            sftp-server-${{ matrix.target }}.tar.xz
-            sftp-server-${{ matrix.target }}.tar.xz.SHA256
-
   release:
     name: create github release
     needs: build
