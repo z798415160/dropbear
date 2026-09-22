@@ -3,7 +3,7 @@ set -ev
 
 # ---- Config ----------------------------------------------------------------
 : "${DROPBEAR_VERSION:=2026.94}"   # Dropbear release to build
-: "${ZIG_VERSION:=0.17.0}"         # Zig to use for musl cross static
+: "${ZIG_VERSION:=0.16.0}"         # Zig to use for musl cross static
 : "${JOBS:=8}"                     # parallel make
 
 # TARGET may be provided by CI matrix (e.g., x86_64-linux-musl, aarch64-linux-musl
