@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 set -euo pipefail
 
 # 交叉编译三元组（与 muslcc 镜像中的工具链前缀一致）
