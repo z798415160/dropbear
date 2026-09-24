@@ -10,4 +10,4 @@ WORKDIR /build
 COPY build-armv7.sh /build/build-armv7.sh
 RUN chmod +x /build/build-armv7.sh
 
-CMD ["/build/build.sh"]
+CMD ["/build/build-armv7.sh"]
