@@ -15,8 +15,8 @@ jobs:
 
       - name: Build with Docker
         run: |
-          docker build -t dropbear-builder .
-          docker run --rm -v "$(pwd)/output:/build/output" dropbear-builder
+          sudo docker build -t dropbear-builder .
+          sudo docker run --rm -v "$(pwd)/output:/build/output" dropbear-builder
 
       - name: Upload dropbear artifact
         uses: actions/upload-artifact@v4
