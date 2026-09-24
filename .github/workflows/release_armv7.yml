@@ -1,120 +1,36 @@
-name: armv7_Build, Test & Release Dropbear Binaries
+name: Build Dropbear armv7 musl static
 
 on:
   push:
-    tags: ["v*"]
+    branches: [ patch-1 ]
   workflow_dispatch:
 
 jobs:
   build:
-    name: build ${{ matrix.target }}
-    runs-on: ${{ matrix.runs_on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: armv7-unknown-linux-musleabihf"
-            runs_on: ubuntu-latest
-
-    env:
-      DROPBEAR_VERSION: 2026.94
-      ZIG_VERSION: 0.16.0
-      JOBS: 8
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # (Optional) prove we’re on the expected arch
-      - name: Smoke arch
-        run: uname -m
-
-      - name: Install build deps
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl ca-certificates tar bzip2 xz-utils autoconf automake make gcc g++ cmake ninja-build
+          sudo apt-get install -y wget bzip2 make
 
-      - name: Make build scripts executable
+      - name: Download musl-cross toolchain
         run: |
-          git update-index --chmod=+x build-armv7.sh
-          git update-index --chmod=+x build-sftp-openssh.sh
+          wget https://musl.cc/armv7l-linux-musleabihf-cross.tgz
+          tar -xzf armv7l-linux-musleabihf-cross.tgz
 
-      - name: Build static dropbearmulti (musl)
-        env:
-          TARGET: ${{ matrix.target }}
-          DROPBEAR_VERSION: ${{ env.DROPBEAR_VERSION }}
-          ZIG_VERSION: ${{ env.ZIG_VERSION }}
-          JOBS: ${{ env.JOBS }}
-        run: ./build-armv7.sh
-
-      - name: Show dropbear outputs
-        run: ls -l dropbear-*.tar.xz*
-
-      # Simple container smoke check matching the target arch
-      - name: Test binaries in Alpine container
-        env:
-          TARGET: ${{ matrix.target }}
+      - name: Build dropbear
         run: |
-          case "$TARGET" in
-            armv7-unknown-linux-musleabihf) plat="linux/armv7" ;;
-            *) echo "Unknown TARGET $TARGET"; exit 1 ;;
-          esac
-          mkdir -p testdir testdir-sftp
-          tar -xJf "dropbear-${TARGET}.tar.xz" -C testdir
-          tar -xJf "sftp-server-${TARGET}.tar.xz" -C testdir-sftp
-          docker run --rm --platform "${plat}" -v "$PWD/testdir/dropbear-${TARGET}:/out:ro" alpine:3 sh -lc '
-            apk add --no-cache file >/dev/null 2>&1 || true
-            file /out/dropbear || true
-            ldd /out/dropbear || true
-            /out/dropbear -h >/dev/null || true
-          '
-          docker run --rm --platform "${plat}" -v "$PWD/testdir-sftp/sftp-server-${TARGET}:/out:ro" alpine:3 sh -lc '
-            apk add --no-cache file >/dev/null 2>&1 || true
-            file /out/sftp-server || true
-            ldd /out/sftp-server || true
-          '
+          chmod +x build_arm7.sh
+          ./build_arm7.sh
 
-      - name: Upload dropbear artifact (tarballs)
-        uses: actions/upload-artifact@v5
+      - name: Upload dropbear artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: dropbear-${{ matrix.target }}
-          overwrite: true
-          path: |
-            dropbear-${{ matrix.target }}.tar.xz
-            dropbear-${{ matrix.target }}.tar.xz.SHA256
-
-      - name: Upload sftp-server artifact (tarballs)
-        uses: actions/upload-artifact@v5
-        with:
-          name: sftp-server-${{ matrix.target }}
-          overwrite: true
-          path: |
-            sftp-server-${{ matrix.target }}.tar.xz
-            sftp-server-${{ matrix.target }}.tar.xz.SHA256
-
-  release:
-    name: create github release
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: dist
-
-      - name: List artifacts
-        run: ls -lR dist
-
-      - name: Create / Update Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          files: |
-            dist/**/dropbear-*.tar.xz
-            dist/**/dropbear-*.tar.xz.SHA256
-            dist/**/sftp-server-*.tar.xz
-            dist/**/sftp-server-*.tar.xz.SHA256
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: dropbear-armv7-musl-static
+          path: output/dropbear
+          retention-days: 7
