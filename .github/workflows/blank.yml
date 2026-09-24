@@ -1,8 +1,8 @@
-name: Build Dropbear armv7 musl static
+name: Build Dropbear armv7 musl static (Docker)
 
 on:
   push:
-    branches: [ z798415160-patch-1 ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -13,20 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Build with Docker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget bzip2 make
-
-      - name: Download musl-cross toolchain
-        run: |
-          wget https://musl.cc/armv7l-linux-musleabihf-cross.tgz
-          tar -xzf armv7l-linux-musleabihf-cross.tgz
-
-      - name: Build dropbear
-        run: |
-          chmod +x build-armv7.sh
-          ./build-armv7.sh
+          docker build -t dropbear-builder .
+          docker run --rm -v "$(pwd)/output:/build/output" dropbear-builder
 
       - name: Upload dropbear artifact
         uses: actions/upload-artifact@v4
