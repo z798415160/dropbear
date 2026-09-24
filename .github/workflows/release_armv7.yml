@@ -25,8 +25,8 @@ jobs:
 
       - name: Build dropbear
         run: |
-          chmod +x build_arm7.sh
-          ./build_arm7.sh
+          chmod +x build-armv7.sh
+          ./build-armv7.sh
 
       - name: Upload dropbear artifact
         uses: actions/upload-artifact@v4
