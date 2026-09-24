@@ -1,90 +1,94 @@
 #!/usr/bin/env bash
-set -ev
+set -euo pipefail
 
-sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+# 工具链路径
+TOOLCHAIN_DIR="$(pwd)/armv7l-linux-musleabihf-cross"
+TOOLCHAIN_BIN="${TOOLCHAIN_DIR}/bin"
 
-# ---- Config ----------------------------------------------------------------
-: "${DROPBEAR_VERSION:=2026.94}"   # Dropbear release to build
-: "${ZIG_VERSION:=0.16.0}"         # Zig to use for musl cross static
-: "${JOBS:=8}"                     # parallel make
+export PATH="${TOOLCHAIN_BIN}:${PATH}"
 
-# TARGET may be provided by CI matrix (e.g., x86_64-linux-musl, aarch64-linux-musl
-if [[ -z "${TARGET:-}" ]]; then
-  case "$(uname -m)" in
-    x86_64)  TARGET="x86_64-linux-musl" ;;
-    aarch64) TARGET="aarch64-linux-musl" ;;
-    armv7) TARGET="armv7-unknown-linux-musleabihf" ;;
-    *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
-  esac
+# 交叉编译三元组
+HOST=arm-linux-musleabihf
+CC="${HOST}-gcc"
+CXX="${HOST}-g++"
+AR="${HOST}-ar"
+RANLIB="${HOST}-ranlib"
+STRIP="${HOST}-strip"
+
+# 版本
+ZLIB_VERSION="1.3.1"
+DROPBEAR_VERSION="2024.85"
+
+# 下载目录
+DOWNLOAD_DIR="$(pwd)/downloads"
+BUILD_DIR="$(pwd)/build"
+INSTALL_ZLIB="${BUILD_DIR}/zlib-install"
+INSTALL_DROPBEAR="${BUILD_DIR}/dropbear-install"
+OUTPUT_DIR="$(pwd)/output/dropbear"
+
+mkdir -p "${DOWNLOAD_DIR}" "${BUILD_DIR}" "${OUTPUT_DIR}"
+
+# ---------- zlib ----------
+if [ ! -f "${DOWNLOAD_DIR}/zlib-${ZLIB_VERSION}.tar.gz" ]; then
+  wget -O "${DOWNLOAD_DIR}/zlib-${ZLIB_VERSION}.tar.gz" \
+    "https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz"
 fi
 
-workdir="$(pwd)"
-builddir="$(mktemp -d)"
-trap 'rm -rf "$builddir"' EXIT
+tar -xzf "${DOWNLOAD_DIR}/zlib-${ZLIB_VERSION}.tar.gz" -C "${BUILD_DIR}"
 
-zig_pkg_arch=`uname -m`
-zig_pkg="zig-${zig_pkg_arch}-linux-${ZIG_VERSION}.tar.xz"
-zig_url="https://ziglang.org/download/${ZIG_VERSION}/${zig_pkg}"
+pushd "${BUILD_DIR}/zlib-${ZLIB_VERSION}"
 
-echo "Downloading Zig ${ZIG_VERSION} for ${zig_pkg_arch}..."
-curl -fsSL "$zig_url" -o "${builddir}/${zig_pkg}"
-echo "Extracting Zig to $builddir..."
-tar -C "$builddir" -xJf "${builddir}/${zig_pkg}"
-echo "Extracted zig"
-
-zig_root="$(tar -tf "${builddir}/${zig_pkg}" | head -1 | cut -d/ -f1)"
-ZIG_BIN="${builddir}/${zig_root}/zig"
-export PATH="${builddir}/${zig_root}:$PATH"
-echo "Using Zig at: ${ZIG_BIN}"
-"${ZIG_BIN}" version
-
-# --- Get Dropbear -----------------------------------------------------------
-dropbear_tar="dropbear-${DROPBEAR_VERSION}.tar.bz2"
-dropbear_url="https://matt.ucc.asn.au/dropbear/releases/${dropbear_tar}"
-
-echo "Downloading Dropbear ${DROPBEAR_VERSION}..."
-curl -fsSL "$dropbear_url" -o "${builddir}/${dropbear_tar}"
-echo "Extracting Dropbear..."
-tar -C "$builddir" -xjf "${builddir}/${dropbear_tar}"
-cd "${builddir}/dropbear-${DROPBEAR_VERSION}"
-
-# --- Build (static, musl) ---------------------------------------------------
-echo "Cleaning previous build (if any)…"
-make clean || true
-
-echo "Configuring for ${TARGET}…"
-CC="${ZIG_BIN} cc -target ${TARGET}" \
-CFLAGS="-Os -fno-pie" \
-LDFLAGS="-static -no-pie" \
-CPPFLAGS="-DDROPBEAR_X11FWD" \
+CC="${CC}" \
+AR="${AR}" \
+RANLIB="${RANLIB}" \
 ./configure \
-  --host="${TARGET}" \
-  CC=gcc-arm-linux-gnueabihf \
-  CXX=g++-arm-linux-gnueabihf \
-  --disable-pam \
-  --disable-zlib \
-  --enable-bundled-libtom \
-  --enable-static
+  --prefix="${INSTALL_ZLIB}" \
+  --static
 
-echo "Building dropbear…"
-make -j "${JOBS}" CC=gcc-arm-linux-gnueabihf CXX=g++-arm-linux-gnueabihf PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" STATIC=1
+make -j"$(nproc)"
+make install
 
-# --- Package ----------------------------------------------------------------
-[[ -x ./dropbear ]] || { echo "Build failed: dropbear missing"; exit 1; }
-strip ./drop* dbclient scp || true
+popd
 
-# Stage files (with symlinks) inside dropbear-${TARGET}/
-stage_dir="${builddir}/stage/dropbear-${TARGET}"
-mkdir -p "${stage_dir}"
-cp ./dropbear* dbclient scp "${stage_dir}/"
+# ---------- dropbear ----------
+if [ ! -f "${DOWNLOAD_DIR}/dropbear-${DROPBEAR_VERSION}.tar.bz2" ]; then
+  wget -O "${DOWNLOAD_DIR}/dropbear-${DROPBEAR_VERSION}.tar.bz2" \
+    "https://github.com/mkj/dropbear/releases/download/DROPBEAR_${DROPBEAR_VERSION}/dropbear-${DROPBEAR_VERSION}.tar.bz2"
+fi
 
-# Produce dropbear-${TARGET}.tar.xz in the original working dir
-out_tar="${workdir}/dropbear-${TARGET}.tar.xz"
-echo "Creating ${out_tar}…"
-tar -C "${builddir}/stage" -cJf "${out_tar}" "dropbear-${TARGET}"
+tar -xjf "${DOWNLOAD_DIR}/dropbear-${DROPBEAR_VERSION}.tar.bz2" -C "${BUILD_DIR}"
 
-# SHA256 for convenience
-echo "SHA256: "
-sha256sum "${out_tar}" | tee "${out_tar}.SHA256"
+pushd "${BUILD_DIR}/dropbear-${DROPBEAR_VERSION}"
 
-echo "Done: ${out_tar}"
+./configure \
+  --host="${HOST}" \
+  --prefix=/usr \
+  --with-zlib="${INSTALL_ZLIB}" \
+  --enable-static \
+  CC="${CC}" \
+  CXX="${CXX}" \
+  AR="${AR}" \
+  RANLIB="${RANLIB}" \
+  LDFLAGS="-static" \
+  CFLAGS="-Os -ffunction-sections -fdata-sections" \
+  LIBS="-lz"
+
+make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" -j"$(nproc)"
+make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" install DESTDIR="${INSTALL_DROPBEAR}"
+
+popd
+
+# ---------- 收集产物 ----------
+rm -rf "${OUTPUT_DIR}"
+mkdir -p "${OUTPUT_DIR}/bin" "${OUTPUT_DIR}/sbin"
+
+cp "${INSTALL_DROPBEAR}/usr/sbin/dropbear" "${OUTPUT_DIR}/sbin/"
+cp "${INSTALL_DROPBEAR}/usr/bin/dbclient" "${OUTPUT_DIR}/bin/"
+cp "${INSTALL_DROPBEAR}/usr/bin/dropbearkey" "${OUTPUT_DIR}/bin/"
+cp "${INSTALL_DROPBEAR}/usr/bin/dropbearconvert" "${OUTPUT_DIR}/bin/"
+cp "${INSTALL_DROPBEAR}/usr/bin/scp" "${OUTPUT_DIR}/bin/" || true
+
+"${STRIP}" "${OUTPUT_DIR}/sbin/dropbear" || true
+"${STRIP}" "${OUTPUT_DIR}/bin/"* || true
+
+echo "Build finished: ${OUTPUT_DIR}"
