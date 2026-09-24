@@ -1,4 +1,4 @@
-name: Build Dropbear armv7 musl static (Docker)
+name: Build Dropbear armv7 musl static (muslcc Docker)
 
 on:
   push:
