@@ -2,7 +2,7 @@ name: Build Dropbear armv7 musl static
 
 on:
   push:
-    branches: [ batch-1 ]
+    branches: [ z798415160-patch-1 ]
   workflow_dispatch:
 
 jobs:
