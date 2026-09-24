@@ -7,7 +7,7 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-COPY build.sh /build/build-armv7.sh
+COPY build-armv7.sh /build/build-armv7.sh
 RUN chmod +x /build/build-armv7.sh
 
 CMD ["/build/build.sh"]
