@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 交叉编译三元组
-HOST=armv7-alpine-linux-musleabihf
+# 交叉编译三元组（与 muslcc 镜像中的工具链前缀一致）
+HOST=armv7l-linux-musleabihf
 CC="${HOST}-gcc"
 CXX="${HOST}-g++"
 AR="${HOST}-ar"
